@@ -6,10 +6,17 @@ This is in early developement. Try it yourself online: https://netnomad.neocitie
 To do list:
 
 -Drum support
+
+-Data validation/error checking
+
 -Drop down to select tempo
+
 -Drop down to select transposition per channel
+
 -Auto load result into WebMSX and automatically compile and play (unsure if this is feasible)
+
 -Cleaner UI
+
 -Many many many bugfixes
 
 This code derived from and HEAVILY based on https://github.com/g200kg/midi-dump
