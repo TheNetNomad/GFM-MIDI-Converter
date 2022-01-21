@@ -1,0 +1,147 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Gemini FM MIDI Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500&display=swap" rel="stylesheet">
+<style>
+.adr{
+  color:#6cc;
+}
+.dltbytes{
+  color:#bbb;
+}
+.Chunk{
+  color:#f0a;
+}
+.On{
+  color:#ff0;
+}
+.Off{
+  color:#f60;
+}
+.Prog{
+  color:#f00;
+}
+.Ctl{
+  color:#2ff;
+}
+.Other{
+  color:#f0f;
+}
+.delta{
+  color:#cc0;
+}
+.meta{
+  color:#0f0
+}
+html{
+  width:100%;
+  height:100%;
+}
+body{
+  width:100%;
+  height:100%;
+  background:#234;
+  color:#ddf;
+  margin:0;
+  font-family: 'Roboto Mono', monospace;
+  font-size:13px;
+
+}
+body a{
+  color:#fff;
+}
+h1 {
+  margin:5px 0px 0px 10px;
+  font-family: 'Lora', serif;
+  font-size:40px;
+  height:65px;
+}
+#base{
+  width:900px;
+  height:fit-content;
+  background:#000;
+  margin:110px auto;
+  padding:8px;
+  padding-left: 10px;
+  display: inline-block;
+  float: left;
+}
+
+#base2{
+  width:500px;
+  height:fit-content;
+  background:#000;
+  margin:110px auto;
+  padding:8px;
+  display: inline-block;
+  float: right;
+}
+
+#text{
+  color:#fff;
+  width: 100%;;
+  min-height:100px;
+  margin:0;
+  padding:0;
+  white-space: pre-wrap;
+}
+
+#filelabel{
+  background:#468;
+  border:1px solid #ccf;
+  padding:2px 8px;
+  margin-left:10px;
+}
+#filelabel:hover{
+  background:#ccf;
+  color:#123;
+}
+.param2{
+  display:inline-block;
+  vertical-align:top;
+  width:320px;
+  word-wrap:break-word;
+  overflow-wrap:anywhere;
+}
+#header{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100px;
+  background:#123;
+}
+</style>
+</head>
+<body>
+<div id="header">
+	<h1>GeminiFM MIDI Converter</h1>
+	<div style="position:absolute;right:10px;top:0px"> Based on: <a href="https://github.com/g200kg/midi-dump" target="_blank">https://github.com/g200kg/midi-dump</a></div>
+	<input id="file" type="file" style="display:none"/>  <label id="filelabel" for="file">Select File : <span id="filename"></span></span></label><br/>
+</div>
+
+<div>
+	<div id="base">
+		<div id="text">
+		--- Drop MIDI (SMF) file Here or Open from 'SelectFile' menu. ---
+		</div>
+		<br/>
+		<button id="dumpall" style="height:30px;width:120px;display:none" onclick="DumpAll()">Convert MIDI File</button>
+	</div>
+
+	<div id="base2">
+		<textarea id="text2" cols="60">
+		...
+		</textarea>
+	</div>
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/encoding-japanese/1.0.30/encoding.min.js"></script>
+<script src="./mididump.js"></script>
+</body>
+</html>
