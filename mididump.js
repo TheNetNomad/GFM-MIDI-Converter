@@ -879,7 +879,7 @@ function midiToGFMASM(){
 				gfmasmOut += "WAIT FF\r\n";
 				rows++;
 			}
-			gfmasmOut += "WAIT " + (wait_count.toString(16)) + "\r\n";
+			gfmasmOut += "WAIT " + (wait_count.toString(16).toUpperCase()) + "\r\n";
 			rows++;
 			time = gfmasm[i].time;
 		}
