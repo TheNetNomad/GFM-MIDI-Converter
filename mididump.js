@@ -573,7 +573,7 @@ function Init(){
 }
 
 function decToHex(dec){
-	var hex = 0;
+	let hex = 0;
 	
 	switch(dec){
 		case 10:
@@ -656,10 +656,10 @@ function decToHex(dec){
 function midiNumToNote(x){
 	x = x - 24;
 	
-	var octave = Math.floor(x / 12) + 1;
-	var semitones = x % 12;
+	let octave = Math.floor(x / 12) + 1;
+	let  semitones = x % 12;
 	
-	var note = "";
+	let note = "";
 	
 	switch(semitones){
 		case 0:
@@ -702,25 +702,46 @@ function midiNumToNote(x){
 	return note + octave;
 }
 
+/**
 function gcfPair(x,y){
-	if(x == 0){
+	if(x < y){
+		return gcfPair(y,x);
+	}
+	
+	if(x == 1){
 		return y;
 	}
-	return gcfPair(y % x, x);
-}
+	return gcfPair(y, x % y);
+}**/
 
-function gcfArray(arrIn){
-	var gcf = arrIn[0];
+function gcfPair(x,y){
+	if(y<x){
+		gcfPair(y,x);
+	}
 	
-	for(const i in arrIn){
-		gcfPair(arrIn[i],gcf)
-		
-		if(gcf == 1){
-			break;
+	let gcf = 1;
+	
+	for(let i = 1; i <= x; i++){
+		if((x % i == 0) & (y % i == 0)){
+			gcf = i;
 		}
 	}
 	
-	//console.log(gcf);
+	return gcf;
+}
+
+
+
+function gcfArray(arrIn){
+	let gcf = arrIn[0];
+	
+	for(const i in arrIn){
+		gcf = gcfPair(arrIn[i],gcf);
+		
+		if(gcf == 1){
+			return 1;
+		}
+	}
 	return gcf;
 }
 
@@ -828,8 +849,8 @@ function midiToGFMASM(){
 		}
 	}
 	
-	//TODO why isn't the GCF right?? shouldn't have to divide this to get integer time values
-	var gcf = gcfArray(gcfTest) / 2;
+	let gcf = gcfArray(gcfTest);
+	console.log(gcf);
 	
 	for(const i in gfmasm){
 		gfmasm[i].time = gfmasm[i].time  / gcf; 
@@ -844,10 +865,21 @@ function midiToGFMASM(){
 	
 	gfmasmOut += "TEMPO 5 \r\n* INCREASE TEMPO TO SLOW DOWN, DECREASE TEMPO TO SPEED UP\r\n" 
 	
+	let wait_count = 0;
+	
 	for(const i in gfmasm){
 		if(gfmasm[i].time > time){
 			//TODO what if wait higher than 255??
-			gfmasmOut += "WAIT " + (gfmasm[i].time - time) + "\r\n";
+			//gfmasmOut += "WAIT " + (gfmasm[i].time - time) + "\r\n";
+			//rows++;
+			//time = gfmasm[i].time;
+			
+			wait_count = gfmasm[i].time - time;
+			while(wait_count > 255){
+				gfmasmOut += "WAIT FF\r\n";
+				rows++;
+			}
+			gfmasmOut += "WAIT " + (wait_count.toString(16)) + "\r\n";
 			rows++;
 			time = gfmasm[i].time;
 		}
