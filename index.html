@@ -3,8 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Gemini FM MIDI Converter</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500&display=swap" rel="stylesheet">
+
 <style>
 .adr{
   color:#6cc;
@@ -46,8 +45,8 @@ body{
   background:#234;
   color:#ddf;
   margin:0;
-  font-family: 'Roboto Mono', monospace;
-  font-size:13px;
+  font-family: monospace, monospace;
+  font-size:16px;
 
 }
 body a{
@@ -55,23 +54,22 @@ body a{
 }
 h1 {
   margin:5px 0px 0px 10px;
-  font-family: 'Lora', serif;
+  font-family: Arial, sans-serif;
   font-size:40px;
   height:65px;
 }
 #base{
-  width:900px;
+  width:60%;
   height:fit-content;
   background:#000;
   margin:110px auto;
   padding:8px;
-  padding-left: 10px;
   display: inline-block;
   float: left;
 }
 
 #base2{
-  width:500px;
+  width:34%;
   height:fit-content;
   background:#000;
   margin:110px auto;
@@ -114,12 +112,16 @@ h1 {
   height:100px;
   background:#123;
 }
+input[type='number']{
+    width: 40px;
+} 
 </style>
 </head>
 <body>
 <div id="header">
-	<h1>GeminiFM MIDI Converter</h1>
-	<div style="position:absolute;right:10px;top:0px"> Based on: <a href="https://github.com/g200kg/midi-dump" target="_blank">https://github.com/g200kg/midi-dump</a></div>
+	<h1>Gemini FM MIDI Converter</h1>
+	<div style="position:absolute;right:10px;top:0px"><a href="https://github.com/TheNetNomad/GFM-MIDI-Converter" target="_blank">Documentation and Source</a></div>
+	<div style="position:absolute;right:10px;top:20px"> Based on: <a href="https://github.com/g200kg/midi-dump" target="_blank">https://github.com/g200kg/midi-dump</a></div>
 	<input id="file" type="file" style="display:none"/>  <label id="filelabel" for="file">Select File : <span id="filename"></span></span></label><br/>
 </div>
 
@@ -127,15 +129,53 @@ h1 {
 	<div id="base">
 		<div id="text">
 		--- Drop MIDI (SMF) file Here or Open from 'SelectFile' menu. ---
+		
+			<ul>
+				<li>Only note on, note off, and program change events will be parsed.</li>
+				<li>All melodic data must reside between MIDI channels 1 and 6, which will be mapped to FM channels 0 through 5 appropriately.</li>
+				<li>Each of these channels must be monophonic.</li>
+				<li>Any key on event must be followed by a key off event before another key on can be issued, including percussion.</li>
+				<li>All program changes/instrument settings must be between 1 - 32, which will be mapped to the <a href="https://github.com/TheNetNomad/Gemini-FM#Instrument-Table">appropriate instrument.</a></li>
+				<li>All drum data must reside on MIDI channels 9 or 10 and must be one of five notes corresponding to the five OPLL drum tones 
+					<ul>
+						<li>Bass Drum is C3 (note 36)</li>
+						<li>Snare is D3 (note 38)</li>
+						<li>Tom is G3 (note 43)</li>
+						<li>Crash is C#4 (note 49) </li>
+						<li>Hi Hat is F#3 (note 42)</li>
+					</ul>
+				</li>
+				<li>The input file must not be too big ("too big" is to be determined).</li>
+			</ul>
 		</div>
 		<br/>
 		<button id="dumpall" style="height:30px;width:120px;display:none" onclick="DumpAll()">Convert MIDI File</button>
 	</div>
 
 	<div id="base2">
-		<textarea id="text2" cols="60">
-		...
-		</textarea>
+		<button id="reconvert" onclick="midiToGFMASM()" style="height: 30px; width: 120px; display: block;" disabled>Reconvert</button>
+		<table>
+		<tr>
+			<td>Global Tempo</td>
+			<td>CH0 Offset</td>
+			<td>CH1 Offset</td>
+			<td>CH2 Offset</td>
+			<td>CH3 Offset</td>
+			<td>CH4 Offset</td>
+			<td>CH5 Offset</td>
+		</tr>
+		<tr>
+			<td><input type="number" id="tempo" value="5"></td>
+			<td><input type="number" id="ch0t" value="0"></td>
+			<td><input type="number" id="ch1t" value="0"></td>
+			<td><input type="number" id="ch2t" value="0"></td>
+			<td><input type="number" id="ch3t" value="0"></td>
+			<td><input type="number" id="ch4t" value="0"></td>
+			<td><input type="number" id="ch5t" value="0"></td>
+			<td></td>
+		</tr>
+		</table>
+		<textarea id="text2" cols="60" style="width: 99%">...</textarea>
 	</div>
 </div>
 
