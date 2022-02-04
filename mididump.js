@@ -548,6 +548,7 @@ function Drop(ev){
 }
 
 function SelectFile(ev){
+	document.getElementById("reconvert").disabled = true;
   const file=ev.target.files[0];
   if(file){
     document.getElementById("file").value="";
@@ -574,7 +575,7 @@ function Init(){
 
 function decToHex(dec){
 	let hex = 0;
-	
+		
 	switch(dec){
 		case 10:
 			hex = "A";
@@ -702,21 +703,9 @@ function midiNumToNote(x){
 	return note + octave;
 }
 
-/**
-function gcfPair(x,y){
-	if(x < y){
-		return gcfPair(y,x);
-	}
-	
-	if(x == 1){
-		return y;
-	}
-	return gcfPair(y, x % y);
-}**/
-
 function gcfPair(x,y){
 	if(y<x){
-		gcfPair(y,x);
+		return gcfPair(y,x);
 	}
 	
 	let gcf = 1;
@@ -726,7 +715,6 @@ function gcfPair(x,y){
 			gcf = i;
 		}
 	}
-	
 	return gcf;
 }
 
@@ -755,6 +743,42 @@ function parseNoteOn(strIn){
 	};
 }
 
+function parseDrumOn(drumIn,timeIn,drumVol){
+	let drumOut = "";
+	
+	if(drumIn[0] == true){
+		drumOut += "B"
+	}
+	if(drumIn[1] == true){
+		drumOut += "S"
+	}
+	if(drumIn[2] == true){
+		drumOut += "M"
+	}
+	if(drumIn[3] == true){
+		drumOut += "C"
+	}
+	if(drumIn[4] == true){
+		drumOut += "H"
+	}
+	
+	if (drumOut == ""){
+		return {
+			time: timeIn,
+			event: "KEY OFF",
+			channel: 6
+		};
+	}
+	
+	return {
+		time: timeIn,
+		event: "KEY ON",
+		channel: 6,
+		note: drumOut,
+		volume: drumVol
+	};
+}
+
 function parseNoteOff(strIn){
 	return {
 		time: strIn.substring(strIn.indexOf("= ") + 2,strIn.indexOf(":")) / 1,
@@ -768,13 +792,14 @@ function parseProgChg(strIn){
 		time: strIn.substring(strIn.indexOf("= ") + 2,strIn.indexOf(":")) / 1,
 		event: "INSTRUMENT",
 		channel: (strIn.substring(strIn.indexOf("ch:") + 3,strIn.indexOf(" pg")) / 1) - 1,
-		instrument: decToHex( strIn.substring(strIn.indexOf("pg:") + 3,strIn.indexOf(")")) / 1 ),		
+		//instrument: decToHex( strIn.substring(strIn.indexOf("pg:") + 3,strIn.indexOf(")")) / 1 ),		
+		instrument: decToHex(  1 +  parseInt(strIn.substring(strIn.indexOf("pg:") + 3,strIn.indexOf(")"))) ),	
 	};
 }
 
 function midiToGFMASM(){
-	var gfmasm = [];
-	var midiHTML = output.split("div");
+	let gfmasm = [];
+	let midiHTML = output.split("div");
 	
 	//console.log(midiHTML);
 	
@@ -841,7 +866,7 @@ function midiToGFMASM(){
 		return 0;
 	});
 	
-	var gcfTest = [];
+	let gcfTest = [];
 	
 	for(const i in gfmasm){
 		if(gfmasm[i].time != 0){
@@ -850,7 +875,6 @@ function midiToGFMASM(){
 	}
 	
 	let gcf = gcfArray(gcfTest);
-	console.log(gcf);
 	
 	for(const i in gfmasm){
 		gfmasm[i].time = gfmasm[i].time  / gcf; 
@@ -858,14 +882,78 @@ function midiToGFMASM(){
 	
 	console.log(gfmasm);
 	
-	var gfmasmOut = "";
-	var time = 0;
-	var rows = 4;
-	var volume =[0,0,0,0,0,0,0,0,0,0,0,0];
+	let drumTemp = gfmasm;
+	gfmasm = [];
 	
-	gfmasmOut += "TEMPO 5 \r\n* INCREASE TEMPO TO SLOW DOWN, DECREASE TEMPO TO SPEED UP\r\n" 
+	let drumProcess = false;
+	//BSMCH
+	let drumBuffer = [false,false,false,false,false];
+	let drumVol = [0,0,0,0,0];
+	
+	for(const i in drumTemp){
+		if(drumTemp[i].channel == 9){
+			drumProcess = true;
+			//console.log(drumTemp[i].note);
+			switch(drumTemp[i].note){
+				case "36": //MIDI ACOUSTIC BD
+					drumBuffer[0] = true;
+					drumVol[0] = drumTemp[i].volume;
+					break;
+				case "38": //MIDI ACOUSTIC SNARE
+					drumBuffer[1] = true;
+					drumVol[1] = drumTemp[i].volume;
+					break;
+				case "43": //MIDI HI FLOOR TOM
+					drumBuffer[2] = true;
+					drumVol[2] = drumTemp[i].volume;
+					break;
+				case "49": //MIDI CRASH 1
+					drumBuffer[3] = true;
+					drumVol[3] = drumTemp[i].volume;
+					break;
+				case "42": //MIDI CLOSED HAT
+					drumBuffer[4] = true;
+					drumVol[4] = drumTemp[i].volume;
+					break;
+			}
+		}
+		else{
+			if(drumProcess == true){
+				//console.log(drumBuffer);
+				drumProcess = false;
+				if(i > 0){
+					gfmasm.push(parseDrumOn(drumBuffer, drumTemp[i - 1].time, drumVol));
+				}
+				else{
+					gfmasm.push(parseDrumOn(drumBuffer, 0, drumVol));
+				}
+				//gfmasm.push(parseDrumOn(drumBuffer, drumTemp[i - 1].time, drumVol));
+				drumBuffer = [false,false,false,false,false];
+			}
+			gfmasm.push(drumTemp[i]);
+		}
+	}
+	
+	console.log(gfmasm);	
+	
+	let gfmasmOut = "";
+	let time = 0;
+	let rows = 4;//12 3 4 5 B S M C H
+	let volume = [0,0,0,0,0,0,0,0,0,0,0,0];
+	let transpose = [	document.getElementById("ch0t").value,
+						document.getElementById("ch1t").value,
+						document.getElementById("ch2t").value,
+						document.getElementById("ch3t").value,
+						document.getElementById("ch4t").value,
+						document.getElementById("ch5t").value
+					];
+	
+	
+	gfmasmOut += "TEMPO " + document.getElementById("tempo").value + "\r\n* INCREASE TEMPO TO SLOW DOWN, DECREASE TEMPO TO SPEED UP\r\n" 
 	
 	let wait_count = 0;
+	let x = 0; //debug
+	
 	
 	for(const i in gfmasm){
 		if(gfmasm[i].time > time){
@@ -883,14 +971,49 @@ function midiToGFMASM(){
 			rows++;
 			time = gfmasm[i].time;
 		}
-		
+
 		if(gfmasm[i].event == "KEY ON"){
-			if(gfmasm[i].volume != volume[gfmasm[i].channel]){
-				gfmasmOut += "VOL " + gfmasm[i].channel + " " + decToHex(gfmasm[i].volume) + "\r\n";
-				rows++;
-				volume[gfmasm[i].channel] = gfmasm[i].volume;
+			if(gfmasm[i].channel == 6 ){
+				if(gfmasm[i].volume[0] != volume[6]){
+					gfmasmOut += "VOL B " + decToHex(gfmasm[i].volume[0]) + "\r\n";
+					volume[6] = gfmasm[i].volume[0];
+					rows++;
+				}
+				if(gfmasm[i].volume[1] != volume[7]){
+					gfmasmOut += "VOL S " + decToHex(gfmasm[i].volume[1]) + "\r\n";
+					volume[7] = gfmasm[i].volume[1];
+					rows++;
+				}
+				if(gfmasm[i].volume[2] != volume[8]){
+					gfmasmOut += "VOL M " + decToHex(gfmasm[i].volume[2]) + "\r\n";
+					volume[8] = gfmasm[i].volume[2];
+					rows++;
+				}
+				if(gfmasm[i].volume[3] != volume[9]){
+					gfmasmOut += "VOL C " + decToHex(gfmasm[i].volume[3]) + "\r\n";
+					volume[9] = gfmasm[i].volume[3];
+					rows++;
+				}
+				if(gfmasm[i].volume[4] != volume[10]){
+					gfmasmOut += "VOL H " + decToHex(gfmasm[i].volume[4]) + "\r\n";
+					volume[10] = gfmasm[i].volume[4];
+					rows++;
+				}
+				gfmasmOut += "KEY ON 6 " + gfmasm[i].note + "\r\n";
 			}
-			gfmasmOut += "KEY ON "  + gfmasm[i].channel + " " + midiNumToNote(gfmasm[i].note) + "\r\n";
+			else{
+				if(gfmasm[i].volume != volume[gfmasm[i].channel]){
+					gfmasmOut += "VOL " + gfmasm[i].channel + " " + decToHex(gfmasm[i].volume) + "\r\n";
+					rows++;
+					//console.log(gfmasm[i]);
+					x = gfmasm[i].channel;
+					//console.log(volume);
+					//volume[x] = 15;//gfmasm[i].volume;
+					volume[x] = 15;
+				}
+				gfmasm[i].note = parseInt(gfmasm[i].note) + parseInt(transpose[gfmasm[i].channel]);
+				gfmasmOut += "KEY ON "  + gfmasm[i].channel + " " + midiNumToNote(gfmasm[i].note) + "\r\n";
+			}
 			rows++;
 		}
 		else if(gfmasm[i].event == "KEY OFF"){
@@ -898,16 +1021,21 @@ function midiToGFMASM(){
 			rows++;
 		}
 		else if(gfmasm[i].event == "INSTRUMENT"){
+			if(gfmasm[i].instrument == "20"){
+				gfmasm[i].instrument = 0;
+			}
 			gfmasmOut += "INSTRUMENT "  + gfmasm[i].channel + " " + gfmasm[i].instrument + "\r\n";
 			rows++;
 		}
 	}
-	
+
 	gfmasmOut += "END"
 	
 	document.getElementById("text2").innerHTML= gfmasmOut;
 	document.getElementById("text2").rows = rows;
+	document.getElementById("reconvert").disabled = false;
 }
 
 window.onload=Init;
 DumpAll();
+document.getElementById("reconvert").disabled = true;
