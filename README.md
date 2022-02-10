@@ -1,9 +1,16 @@
 # Gemini FM MIDI Converter
 The Gemini FM MIDI Converter converts MIDI files into ASCII data that can be compiled and played on the MSX with the [Gemini FM music replayer](https://github.com/TheNetNomad/Gemini-FM). Generated ASCII must be compiled with GFMASM.COM to play with GEMINIFM.COM. 
 
-This is in early developement. Try it yourself online [here](https://netnomad.neocities.org/gemconv/)
+This is in developement. Try it yourself online [here](https://netnomad.neocities.org/gemconv/)
 
-This code derived from and heavily based on g200kg's [midi-dump](https://github.com/g200kg/midi-dump).
+This code derived from and heavily based on g200kg's [midi-dump](https://github.com/g200kg/midi-dump) and jannone's [webMSX integration template](https://github.com/jannone/webmsx-integration-template).
+
+# Usage
+Upload a MIDI file in the below format using the "Select File:" button on the top left off the screen. If the MIDI file is capable of being dumped, a portion of the dump will appear beneath the webMSX display as well as a "Convert MIDI File" button. Pressing this button will convert the file and play it within webMSX.
+
+To alter the tempo or the transposition of each channel, use the input fields above the text area on the right hand side. Press the "Reconvert" button to reconvert and reload the MIDI file with these new parameters. You may also edit the GFMASM listing in the below text area, and then press the "Reassemble" button to load your changes into webMSX. Please note that the "Reconvert" button will undo any manual changes done in the text area.
+
+To save your result, you may click the first floppy disk icon on the lower webMSX menu and select "Save Disk Image" to save an MSX-DOS disk. Alternatively, you may copy the GFMASM listing from the text area.
 
 # MIDI Format
 
@@ -29,9 +36,6 @@ Crash | C#4 | 49
 Hi Hat | F#3 |  42
 
 # To Do
-- Auto load result into WebMSX and automatically compile and play (unsure if this is feasible)
 - Data validation/error checking
-- Some method of embedding comments into GFMASM listing from the MIDI file (sysex?)
-- Many many many bugfixes
 
 
