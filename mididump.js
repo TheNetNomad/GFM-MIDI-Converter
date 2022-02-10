@@ -798,6 +798,7 @@ function parseProgChg(strIn){
 }
 
 function midiToGFMASM(){
+	//document.getElementById("text2").value = "";
 	let gfmasm = [];
 	let midiHTML = output.split("div");
 	
@@ -829,8 +830,8 @@ function midiToGFMASM(){
 			return a.time - b.time
 		}
 		else{
-			var x;
-			var y;
+			let x;
+			let y;
 			
 			switch(a.event){
 				case "INSTRUMENT":
@@ -1031,11 +1032,13 @@ function midiToGFMASM(){
 
 	gfmasmOut += "END"
 	
-	document.getElementById("text2").innerHTML= gfmasmOut;
+	document.getElementById("text2").value = gfmasmOut;
 	document.getElementById("text2").rows = rows;
 	document.getElementById("reconvert").disabled = false;
+	document.getElementById("reassemble").disabled = false;
+	emulatorRun();
 }
 
 window.onload=Init;
 DumpAll();
-document.getElementById("reconvert").disabled = true;
+//document.getElementById("reconvert").disabled = true;
