@@ -780,6 +780,11 @@ function parseDrumOn(drumIn,timeIn,drumVol){
 }
 
 function parseNoteOff(strIn){
+	
+	if (isNaN((strIn.substring(strIn.indexOf("ch:") + 3,strIn.indexOf(" note"))	 / 1) - 1)){
+		console.log(strIn);
+	}
+	
 	return {
 		time: strIn.substring(strIn.indexOf("= ") + 2,strIn.indexOf(":")) / 1,
 		event: "KEY OFF",
@@ -800,10 +805,15 @@ function parseProgChg(strIn){
 function midiToGFMASM(){
 	//document.getElementById("text2").value = "";
 	let gfmasm = [];
+	let errorOut = "";
+	let errorCount = 0;
+	let warningCount = 0;
+	
 	let midiHTML = output.split("div");
 	
 	//console.log(midiHTML);
 	
+	/**
 	for(const i in midiHTML){
 		if(midiHTML[i].includes("NoteOn")){
 			//console.log(parseNoteOn(midiHTML[i]));
@@ -823,6 +833,32 @@ function midiToGFMASM(){
 			//console.log(parseProgChg(midiHTML[i]));
 			gfmasm.push(parseProgChg(midiHTML[i]));
 		}
+	}**/
+	
+	for(const i in midiHTML){
+		if(midiHTML[i].includes("NoteOn")){
+			gfmasm.push(parseNoteOn(midiHTML[i]));
+		}
+		
+		if(midiHTML[i].includes("NoteOff") && !(midiHTML[i].includes("CtrlChg"))){
+			gfmasm.push(parseNoteOff(midiHTML[i]));
+		}
+		
+		if(midiHTML[i].includes("ProgChg")){
+			gfmasm.push(parseProgChg(midiHTML[i]));
+		}
+		
+		if(midiHTML[i].includes("CtrlChg")){
+			errorOut += "WARNING: CtrlChg MIDI event not supported<br>";
+			warningCount++;
+		}
+		
+		if(midiHTML[i].includes("PitchBend")){
+			errorOut += "WARNING: PitchBend MIDI event not supported<br>";
+			warningCount++;
+		}
+		
+		
 	}
 	
 	gfmasm.sort(function(a, b){
@@ -881,18 +917,15 @@ function midiToGFMASM(){
 		gfmasm[i].time = gfmasm[i].time  / gcf; 
 	}
 	
-	console.log(gfmasm);
-	
 	let drumTemp = gfmasm;
 	gfmasm = [];
-	
 	let drumProcess = false;
 	//BSMCH
 	let drumBuffer = [false,false,false,false,false];
 	let drumVol = [0,0,0,0,0];
 	
 	for(const i in drumTemp){
-		if(drumTemp[i].channel == 9){
+		if(drumTemp[i].event == "KEY ON" && ((drumTemp[i].channel == 9) || (drumTemp[i].channel == 10))){
 			drumProcess = true;
 			//console.log(drumTemp[i].note);
 			switch(drumTemp[i].note){
@@ -916,6 +949,12 @@ function midiToGFMASM(){
 					drumBuffer[4] = true;
 					drumVol[4] = drumTemp[i].volume;
 					break;
+				default:
+					if(typeof drumTemp[i].note != "undefined"){
+						errorOut += "WARNING: Invalid drum note " + drumTemp[i].note + " not processed <br>";
+						warningCount++;
+					}
+					break;
 			}
 		}
 		else{
@@ -935,11 +974,29 @@ function midiToGFMASM(){
 		}
 	}
 	
+	
+	let redundantTest = gfmasm;
+	gfmasm = [];
+	
+	for(let i = 0; i < redundantTest.length - 2;i++){
+		if(redundantTest[i].event == redundantTest[i + 1].event){
+			if(redundantTest[i].channel != redundantTest[i + 1].channel){
+				gfmasm.push(redundantTest[i]);
+			}
+		}
+		else{
+			gfmasm.push(redundantTest[i]);
+		}
+	}
+	
+	gfmasm.push(redundantTest[redundantTest.length - 1]);
+
+	
 	console.log(gfmasm);	
 	
 	let gfmasmOut = "";
 	let time = 0;
-	let rows = 4;//12 3 4 5 B S M C H
+	let rows = 3;//12 3 4 5 B S M C H
 	let volume = [0,0,0,0,0,0,0,0,0,0,0,0];
 	let transpose = [	document.getElementById("ch0t").value,
 						document.getElementById("ch1t").value,
@@ -951,6 +1008,11 @@ function midiToGFMASM(){
 	
 	
 	gfmasmOut += "TEMPO " + document.getElementById("tempo").value + "\r\n* INCREASE TEMPO TO SLOW DOWN, DECREASE TEMPO TO SPEED UP\r\n" 
+	if(document.getElementById("loop").checked){
+		gfmasmOut += "LOOP START\r\n";
+		rows++;
+	}
+	
 	
 	let wait_count = 0;
 	let x = 0; //debug
@@ -958,15 +1020,12 @@ function midiToGFMASM(){
 	
 	for(const i in gfmasm){
 		if(gfmasm[i].time > time){
-			//TODO what if wait higher than 255??
-			//gfmasmOut += "WAIT " + (gfmasm[i].time - time) + "\r\n";
-			//rows++;
-			//time = gfmasm[i].time;
 			
 			wait_count = gfmasm[i].time - time;
 			while(wait_count > 255){
 				gfmasmOut += "WAIT FF\r\n";
 				rows++;
+				wait_count -= 255;
 			}
 			gfmasmOut += "WAIT " + (wait_count.toString(16).toUpperCase()) + "\r\n";
 			rows++;
@@ -974,51 +1033,75 @@ function midiToGFMASM(){
 		}
 
 		if(gfmasm[i].event == "KEY ON"){
-			if(gfmasm[i].channel == 6 ){
-				if(gfmasm[i].volume[0] != volume[6]){
-					gfmasmOut += "VOL B " + decToHex(gfmasm[i].volume[0]) + "\r\n";
-					volume[6] = gfmasm[i].volume[0];
-					rows++;
+			if(gfmasm[i].volume != 0 ){
+				if(gfmasm[i].channel == 6 ){
+					if(gfmasm[i].volume[0] != volume[6]){
+						gfmasmOut += "VOL B " + decToHex(gfmasm[i].volume[0]) + "\r\n";
+						volume[6] = gfmasm[i].volume[0];
+						rows++;
+					}
+					if(gfmasm[i].volume[1] != volume[7]){
+						gfmasmOut += "VOL S " + decToHex(gfmasm[i].volume[1]) + "\r\n";
+						volume[7] = gfmasm[i].volume[1];
+						rows++;
+					}
+					if(gfmasm[i].volume[2] != volume[8]){
+						gfmasmOut += "VOL M " + decToHex(gfmasm[i].volume[2]) + "\r\n";
+						volume[8] = gfmasm[i].volume[2];
+						rows++;
+					}
+					if(gfmasm[i].volume[3] != volume[9]){
+						gfmasmOut += "VOL C " + decToHex(gfmasm[i].volume[3]) + "\r\n";
+						volume[9] = gfmasm[i].volume[3];
+						rows++;
+					}
+					if(gfmasm[i].volume[4] != volume[10]){
+						gfmasmOut += "VOL H " + decToHex(gfmasm[i].volume[4]) + "\r\n";
+						volume[10] = gfmasm[i].volume[4];
+						rows++;
+					}
+					gfmasmOut += "KEY ON 6 " + gfmasm[i].note + "\r\n";
 				}
-				if(gfmasm[i].volume[1] != volume[7]){
-					gfmasmOut += "VOL S " + decToHex(gfmasm[i].volume[1]) + "\r\n";
-					volume[7] = gfmasm[i].volume[1];
-					rows++;
+				else{
+					if(gfmasm[i].volume != volume[gfmasm[i].channel]){
+						gfmasmOut += "VOL " + gfmasm[i].channel + " " + decToHex(gfmasm[i].volume) + "\r\n";
+						if(gfmasm[i].channel > 6){
+							errorOut += "ERROR: VOL event in invalid channel on line " + rows  + "<br>";
+							errorCount++;
+						}
+						rows++;
+						//console.log(gfmasm[i]);
+						x = gfmasm[i].channel;
+						//console.log(volume);
+						//volume[x] = 15;//gfmasm[i].volume;
+						volume[x] = 15;
+					}
+					gfmasm[i].note = parseInt(gfmasm[i].note) + parseInt(transpose[gfmasm[i].channel]);
+					gfmasmOut += "KEY ON "  + gfmasm[i].channel + " " + midiNumToNote(gfmasm[i].note) + "\r\n";
+					if(gfmasm[i].channel > 6){
+						errorOut += "ERROR: KEY ON event in invalid channel on line " + rows  + "<br>";
+						errorCount++;
+					}
 				}
-				if(gfmasm[i].volume[2] != volume[8]){
-					gfmasmOut += "VOL M " + decToHex(gfmasm[i].volume[2]) + "\r\n";
-					volume[8] = gfmasm[i].volume[2];
-					rows++;
-				}
-				if(gfmasm[i].volume[3] != volume[9]){
-					gfmasmOut += "VOL C " + decToHex(gfmasm[i].volume[3]) + "\r\n";
-					volume[9] = gfmasm[i].volume[3];
-					rows++;
-				}
-				if(gfmasm[i].volume[4] != volume[10]){
-					gfmasmOut += "VOL H " + decToHex(gfmasm[i].volume[4]) + "\r\n";
-					volume[10] = gfmasm[i].volume[4];
-					rows++;
-				}
-				gfmasmOut += "KEY ON 6 " + gfmasm[i].note + "\r\n";
 			}
 			else{
-				if(gfmasm[i].volume != volume[gfmasm[i].channel]){
-					gfmasmOut += "VOL " + gfmasm[i].channel + " " + decToHex(gfmasm[i].volume) + "\r\n";
-					rows++;
-					//console.log(gfmasm[i]);
-					x = gfmasm[i].channel;
-					//console.log(volume);
-					//volume[x] = 15;//gfmasm[i].volume;
-					volume[x] = 15;
+				if(gfmasm[i].channel > 6){
+					errorOut += "ERROR: KEY OFF event in invalid channel on line " + rows  + "<br>";
+					errorCount++;
 				}
-				gfmasm[i].note = parseInt(gfmasm[i].note) + parseInt(transpose[gfmasm[i].channel]);
-				gfmasmOut += "KEY ON "  + gfmasm[i].channel + " " + midiNumToNote(gfmasm[i].note) + "\r\n";
 			}
 			rows++;
 		}
 		else if(gfmasm[i].event == "KEY OFF"){
+			if(gfmasm[i].channel == 9 || gfmasm[i].channel == 10){
+				gfmasm[i].channel = 6;
+			}
+			
 			gfmasmOut += "KEY OFF "  + gfmasm[i].channel + "\r\n";
+			if(gfmasm[i].channel > 6){
+					errorOut += "ERROR: KEY OFF event in invalid channel on line " + rows  + "<br>";
+					errorCount++;
+			}
 			rows++;
 		}
 		else if(gfmasm[i].event == "INSTRUMENT"){
@@ -1026,12 +1109,37 @@ function midiToGFMASM(){
 				gfmasm[i].instrument = 0;
 			}
 			gfmasmOut += "INSTRUMENT "  + gfmasm[i].channel + " " + gfmasm[i].instrument + "\r\n";
+			if(gfmasm[i].channel > 5){
+				errorOut += "ERROR: INSTRUMENT event in invalid channel on line " + rows  + "<br>";
+				errorCount++;
+			}
+			if(gfmasm[i].instrument > 20){
+				errorOut += "ERROR: INSTRUMENT event with invalid instrument on line " + rows  + "<br>";
+				errorCount++;
+			}
 			rows++;
 		}
 	}
-
+	if(document.getElementById("loop").checked){
+		gfmasmOut += "LOOP END\r\n";
+		rows++;
+	}
+	
+	
 	gfmasmOut += "END"
 	
+	errorOut = "ERRORS: " + errorCount + "<br>WARNINGS: " + warningCount + "<br><br>" + errorOut;
+	if(errorCount > 0){
+		document.getElementById("error").style.color = "red";
+	}
+	else if(warningCount > 0){
+		document.getElementById("error").style.color = "yellow";
+	}
+	else{
+		document.getElementById("error").style.color = "";
+	}
+	
+	document.getElementById("error").innerHTML = errorOut;
 	document.getElementById("text2").value = gfmasmOut;
 	document.getElementById("text2").rows = rows;
 	document.getElementById("reconvert").disabled = false;
