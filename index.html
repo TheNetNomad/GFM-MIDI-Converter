@@ -172,6 +172,8 @@ input[type='number']{
 	<div id="base2">
 		<button id="reconvert" onclick="DumpAll()" style="height: 30px; width: 120px; display:inline-block;" disabled >Reconvert</button>
 		<button id="reassemble" onclick="emulatorRun()" style="height: 30px; width: 120px; display:inline-block;" disabled >Reassemble</button>
+		<input type="checkbox" id="loop" name="loop" value="Loop Song">
+		<label for="vehicle1">Loop Song</label>
 		<table>
 		<tr>
 			<td>Global Tempo</td>
@@ -193,6 +195,7 @@ input[type='number']{
 			<td></td>
 		</tr>
 		</table>
+		<div id="error" style="overflow: scroll;max-height: 100px"></div>
 		<textarea id="text2" cols="60" style="width: 99%"></textarea>
 	</div>
 </div>
