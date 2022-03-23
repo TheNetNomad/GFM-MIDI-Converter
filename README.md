@@ -24,8 +24,6 @@ Unfortunately you cannot just load any 'ol MIDI file into the GFM MIDI converter
 - All drum data must reside on MIDI channels 9 or 10 and must be one of five notes corresponding to the five OPLL drum tones (see below).
 - The input file must not be too big ("too big" is to be determined).
 
-Please note that GFMASM.COM does not do any error checking and at this point, neither does the MIDI converter. Not meeting this criteria (or potentially other criteria I have not identified yet- early developement, please bare with me!) can lead to a MIDI file that is converted fine into ASCII data that is assembled fine into a binary file that does not play properly.
-
 ## MIDI Drum Map
 | Drum Tone | MIDI Note Name | MIDI Note Number |
 | --- | --- | --- |
