@@ -845,7 +845,9 @@ function midiToGFMASM(){
 		}
 		
 		if(midiHTML[i].includes("ProgChg")){
-			gfmasm.push(parseProgChg(midiHTML[i]));
+			if(!(midiHTML[i].includes("ch:9")) && !(midiHTML[i].includes("ch:10"))){
+				gfmasm.push(parseProgChg(midiHTML[i]));
+			}
 		}
 		
 		if(midiHTML[i].includes("CtrlChg")){
@@ -902,6 +904,8 @@ function midiToGFMASM(){
 		
 		return 0;
 	});
+	
+	//console.log(gfmasm);
 	
 	let gcfTest = [];
 	
