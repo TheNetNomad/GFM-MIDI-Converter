@@ -793,12 +793,17 @@ function parseNoteOff(strIn){
 }
 
 function parseProgChg(strIn){
+	let inst = decToHex(  1 +  parseInt(strIn.substring(strIn.indexOf("pg:") + 3,strIn.indexOf(")"))) );
+	if(inst == 32){
+		inst = 0;
+	}
+	
 	return {
 		time: strIn.substring(strIn.indexOf("= ") + 2,strIn.indexOf(":")) / 1,
 		event: "INSTRUMENT",
 		channel: (strIn.substring(strIn.indexOf("ch:") + 3,strIn.indexOf(" pg")) / 1) - 1,
 		//instrument: decToHex( strIn.substring(strIn.indexOf("pg:") + 3,strIn.indexOf(")")) / 1 ),		
-		instrument: decToHex(  1 +  parseInt(strIn.substring(strIn.indexOf("pg:") + 3,strIn.indexOf(")"))) ),	
+		instrument: inst,	
 	};
 }
 
