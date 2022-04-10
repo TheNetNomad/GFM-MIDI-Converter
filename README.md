@@ -22,7 +22,6 @@ Unfortunately you cannot just load any 'ol MIDI file into the GFM MIDI converter
 - Any key on event must be followed by a key off event before another key on can be issued, including percussion.
 - All program changes/instrument settings must be between 1 - 32, which will be mapped to the [appropriate instrument](https://github.com/TheNetNomad/Gemini-FM#Instrument-Table).
 - All drum data must reside on MIDI channels 9 or 10 and must be one of five notes corresponding to the five OPLL drum tones (see below).
-- The input file must not be too big ("too big" is to be determined).
 
 ## MIDI Drum Map
 | Drum Tone | MIDI Note Name | MIDI Note Number |
@@ -32,8 +31,3 @@ Snare | D3 | 38
 Tom | G3 | 43
 Crash | C#4 | 49 
 Hi Hat | F#3 |  42
-
-# To Do
-- Data validation/error checking
-
-
